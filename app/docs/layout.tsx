@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 
 export default function RootDocsLayout({ children }: { children: ReactNode }) {
   return (
-    <DocsLayout tree={pageTree} nav={{ title: 'x402 JavaScript/TypeScript SDK' }}>
+    <DocsLayout tree={pageTree} nav={{ title: 'x402 Solana SDK' }}>
       {children}
     </DocsLayout>
   );

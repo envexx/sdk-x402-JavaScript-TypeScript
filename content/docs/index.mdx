@@ -1,52 +1,70 @@
 ---
-title: x402 JavaScript/TypeScript SDK Documentation
-description: The ultimate SDK for payment-gated APIs on Solana
+title: x402 Solana SDK Documentation
+description: The ultimate single-package SDK for payment-gated APIs using USDC on Solana
 ---
 
-Welcome to the official documentation for **x402 JavaScript/TypeScript SDK** - the ultimate toolkit for building payment-gated APIs on Solana.
+Welcome to the official documentation for **x402 Solana SDK** - the ultimate single-package toolkit for building payment-gated APIs using USDC on Solana.
 
-## What is x402 SDK?
+## What is x402 Solana SDK?
 
-A **simple**, **powerful** and **production-ready** SDK that transforms any API into a paid service in minutes. Built for the Solana ecosystem with developer experience as the top priority.
+A **simple**, **powerful** and **production-ready** SDK that transforms any API into a paid USDC service in just 2 minutes. Compatible with the x402 protocol and built for maximum developer experience.
+
+**🎉 Now available on NPM:** `npm install x402-solana-sdk`
 
 ### ⚡ **Key Features**
 
+- **📦 Single Package** - One `npm install` for everything
+- **💰 USDC Payments** - Uses USDC token, not SOL
+- **🔗 x402 Protocol** - Compatible with x402.org facilitator
 - **🚀 2-Minute Setup** - From installation to working payment-gated API
-- **🌐 Multi-Framework** - Express.js, Next.js, Fastify, Hono support
+- **🌐 Multi-Framework** - Express.js ready (Next.js, Fastify, Hono coming soon)
 - **🔒 Secure by Default** - Ed25519 signatures, nonce protection, replay attack prevention
 - **💎 TypeScript First** - Full type safety and IntelliSense support
-- **📦 NPM Ready** - Available on NPM registry for easy installation
 
-### 🎯 **Why Choose x402 SDK?**
+### 🎯 **Why Choose x402 Solana SDK?**
 
-| Traditional Setup | x402 SDK |
-|-------------------|----------|
+| Traditional Setup | x402 Solana SDK |
+|-------------------|-----------------|
+| Multiple packages | **Single package** |
+| SOL payments | **USDC payments** |
+| Custom protocol | **x402 protocol** |
 | 30+ minutes setup | **2 minutes** |
 | 200+ lines of code | **10-20 lines** |
-| Single framework | **4 frameworks** |
 | Manual security | **Built-in security** |
-| Complex integration | **One-liner integration** |
 
 ## Quick Start
 
-Get started with x402 SDK in under 2 minutes:
+Get started with x402 Solana SDK in under 2 minutes:
 
 ```bash
-npm install x402-framework-sdk x402-client
+# ✅ Single package installation
+npm install x402-solana-sdk
 ```
 
 ```typescript
-import { createX402Middleware } from 'x402-framework-sdk/express';
+import { createX402Middleware, createClient, createWallet } from 'x402-solana-sdk';
 
+// Server setup (Express.js)
 const x402 = createX402Middleware({
-  facilitatorUrl: 'http://localhost:3001',
-  merchantAddress: 'YOUR_SOLANA_ADDRESS'
+  amount: 0.10, // $0.10 USDC
+  payToAddress: process.env.PAY_TO_ADDRESS,
+  facilitatorUrl: 'https://x402.org/facilitator',
+  network: 'solana-devnet'
 });
 
-app.get('/premium', x402.requirePayment(0.01), handler);
-```
+app.get('/premium', x402.requirePayment(0.10), (req, res) => {
+  res.json({ 
+    message: 'Premium content unlocked!',
+    payment: req.x402 // Payment details
+  });
+});
 
-That's it! Your API is now payment-gated. 🎉
+// Client usage
+const wallet = createWallet();
+const client = createClient({ wallet });
+
+const response = await client.payAndFetch('/premium', { amount: 0.10 });
+```
 
 ## What's Next?
 

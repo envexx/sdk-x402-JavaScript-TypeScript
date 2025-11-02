@@ -18,7 +18,7 @@ export default function HomePage() {
           marginBottom: '1rem',
         }}
       >
-        x402 JavaScript/TypeScript SDK
+        x402 Solana SDK
       </h1>
       <p style={{ marginBottom: '2rem' }}>
         You can open{' '}

@@ -1,9 +1,9 @@
 ---
 title: Getting Started
-description: Transform any API into a paid service in just 2 minutes with x402 SDK
+description: Transform any API into a paid USDC service in just 2 minutes with x402 Solana SDK
 ---
 
-Transform any API into a paid service in just 2 minutes with x402 SDK.
+Transform any API into a paid USDC service in just 2 minutes with x402 Solana SDK. Compatible with x402 protocol and available on NPM.
 
 ## Prerequisites
 
@@ -11,22 +11,25 @@ Before you begin, make sure you have:
 
 - **Node.js** 16+ installed
 - **NPM** or **pnpm** package manager
-- A **Solana wallet address** for receiving payments
+- A **Solana wallet address** for receiving USDC payments
 - Basic knowledge of **JavaScript/TypeScript**
+- **Optional**: USDC tokens for testing payments
 
 ## Installation
 
-Install the x402 SDK packages:
+Install the x402 Solana SDK - **single package only**:
 
 ```bash
-npm install x402-framework-sdk x402-client
+npm install x402-solana-sdk
 ```
 
 Or with pnpm:
 
 ```bash
-pnpm add x402-framework-sdk x402-client
+pnpm add x402-solana-sdk
 ```
+
+**That's it!** No multiple packages, no complex dependencies. Everything you need in one package.
 
 ## Quick Setup
 
@@ -38,13 +41,15 @@ x402 SDK supports multiple frameworks. Choose the one you're using:
 
 ```typescript
 import express from 'express';
-import { createX402Middleware } from 'x402-framework-sdk/express';
+import { createX402Middleware } from 'x402-solana-sdk';
 
 const app = express();
 
 const x402 = createX402Middleware({
-  facilitatorUrl: 'http://localhost:3001',
-  merchantAddress: 'YOUR_SOLANA_ADDRESS'
+  amount: 0.10, // $0.10 USDC
+  payToAddress: process.env.PAY_TO_ADDRESS,
+  facilitatorUrl: 'https://x402.org/facilitator',
+  network: 'solana-devnet'
 });
 
 // Public endpoint (free)
@@ -52,25 +57,23 @@ app.get('/public', (req, res) => {
   res.json({ message: 'This is free!' });
 });
 
-// Premium endpoint (0.01 SOL)
-app.get('/premium', 
-  x402.requirePayment(0.01), 
-  (req, res) => {
-    res.json({ 
-      message: 'Premium content unlocked!',
-      data: 'Exclusive content here...'
-    });
-  }
-);
+// Premium endpoint
+app.get('/premium', x402.requirePayment(0.10), (req, res) => {
+  res.json({
+    message: 'Premium content unlocked!',
+    payment: req.x402,
+    amount: '$0.10 USDC'
+  });
+});
 
 app.listen(3000);
 ```
 
-#### Next.js
+#### Next.js (Coming Soon)
 
 ```typescript
 // app/api/premium/route.ts
-import { withX402 } from 'x402-framework-sdk/nextjs';
+import { withX402 } from 'x402-solana-sdk/nextjs';
 
 export const GET = withX402(
   async (req) => {
@@ -142,12 +145,13 @@ export default app;
 Create a `.env` file in your project root:
 
 ```env
-# x402 Configuration
-X402_FACILITATOR_URL=http://localhost:3001
-X402_MERCHANT_ADDRESS=YOUR_SOLANA_ADDRESS_HERE
+# x402 Solana SDK Configuration
+PAY_TO_ADDRESS=YOUR_SOLANA_ADDRESS_HERE
+X402_FACILITATOR_URL=https://x402.org/facilitator
+X402_NETWORK=solana-devnet
 
 # Optional
-X402_TIMEOUT=10000
+X402_TIMEOUT=30000
 X402_MAX_PAYMENT_AMOUNT=1000000000
 ```
 
@@ -166,30 +170,31 @@ solana-keygen new --outfile ~/.config/solana/id.json
 solana address
 ```
 
-Copy this address to your `.env` file as `X402_MERCHANT_ADDRESS`.
+Copy this address to your `.env` file as `PAY_TO_ADDRESS`.
 
 ## Client Usage
 
 Create a client to make payments:
 
 ```typescript
-import { X402Client, X402Wallet } from 'x402-client';
+import { createClient, createWallet } from 'x402-solana-sdk';
 
 // Create or load wallet
-const wallet = X402Wallet.create(); // or fromPrivateKey()
+const wallet = createWallet(); // or X402Wallet.fromSecretKey()
 
 // Create client
-const client = new X402Client({
+const client = createClient({
   wallet,
-  facilitatorUrl: 'http://localhost:3001'
+  facilitatorUrl: 'https://x402.org/facilitator',
+  network: 'solana-devnet'
 });
 
 // Make payment request
 const response = await client.payAndFetch('http://localhost:3000/premium', {
-  amount: 0.01 // 0.01 SOL
+  amount: 0.10 // $0.10 USDC
 });
 
-console.log(response.data); // Premium content
+console.log(response); // Premium content
 ```
 
 ## Testing Your Setup
