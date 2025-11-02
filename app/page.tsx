@@ -18,9 +18,9 @@ export default function HomePage() {
           marginBottom: '1rem',
         }}
       >
-        Hello World
+        x402 JavaScript/TypeScript SDK
       </h1>
-      <p>
+      <p style={{ marginBottom: '2rem' }}>
         You can open{' '}
         <Link
           href="/docs"
@@ -29,9 +29,19 @@ export default function HomePage() {
             textDecoration: 'underline',
           }}
         >
-          /docs
+          View Documentation
         </Link>{' '}
-        and see the documentation.
+        or{' '}
+        <Link
+          href="/docs/getting-started"
+          style={{
+            fontWeight: '600',
+            textDecoration: 'underline',
+          }}
+        >
+          Get Started
+        </Link>
+        .
       </p>
     </main>
   );

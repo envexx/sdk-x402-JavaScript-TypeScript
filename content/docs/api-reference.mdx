@@ -1,0 +1,483 @@
+---
+title: API Reference
+description: Complete API documentation for x402 SDK methods and options
+---
+
+Complete reference for all x402 SDK methods, options, and types.
+
+## Core Middleware
+
+### `createX402Middleware(options)`
+
+Creates x402 middleware for Express.js applications.
+
+#### Parameters
+
+- `options` (object): Configuration options
+  - `facilitatorUrl` (string): URL of the facilitator service
+  - `merchantAddress` (string): Solana address for receiving payments
+  - `timeout?` (number): Request timeout in milliseconds (default: 10000)
+  - `nonceStorage?` (string): Storage type - 'memory', 'file', or 'redis' (default: 'memory')
+  - `nonceExpiry?` (number): Nonce expiration time in milliseconds (default: 300000)
+  - `debug?` (boolean): Enable debug logging (default: false)
+
+#### Returns
+
+Object with middleware methods:
+- `requirePayment(amount, options?)`: Middleware requiring payment
+- `optionalPayment(amount, options?)`: Middleware with optional payment
+- `healthCheck()`: Health check middleware
+
+#### Example
+
+```typescript
+import { createX402Middleware } from 'x402-framework-sdk/express';
+
+const x402 = createX402Middleware({
+  facilitatorUrl: 'http://localhost:3001',
+  merchantAddress: 'YOUR_SOLANA_ADDRESS',
+  timeout: 15000,
+  nonceStorage: 'redis',
+  debug: true
+});
+```
+
+### `requirePayment(amount, options?)`
+
+Middleware that requires payment before allowing access to the endpoint.
+
+#### Parameters
+
+- `amount` (number): Required payment amount in SOL
+- `options?` (object): Additional options
+  - `maxAmount?` (number): Maximum allowed payment amount
+  - `minAmount?` (number): Minimum required payment amount
+  - `timeout?` (number): Override default timeout
+  - `currency?` (string): Payment currency (default: 'SOL')
+
+#### Returns
+
+Express middleware function that:
+- Returns 402 status if no payment provided
+- Validates payment signature and amount
+- Adds `req.x402` object with payment details
+- Calls `next()` if payment is valid
+
+#### Example
+
+```typescript
+app.get('/premium', 
+  x402.requirePayment(0.01, {
+    maxAmount: 0.1,
+    minAmount: 0.005
+  }),
+  (req, res) => {
+    // Access granted - payment verified
+    res.json({ 
+      message: 'Premium content',
+      payment: req.x402 
+    });
+  }
+);
+```
+
+### `optionalPayment(amount, options?)`
+
+Middleware that works with or without payment, providing different functionality based on payment status.
+
+#### Parameters
+
+- `amount` (number): Payment amount for premium features
+- `options?` (object): Same as `requirePayment` options
+
+#### Returns
+
+Express middleware that:
+- Always calls `next()`
+- Sets `req.x402.verified` to `true` if valid payment provided
+- Sets `req.x402.verified` to `false` if no payment or invalid payment
+
+#### Example
+
+```typescript
+app.get('/flexible',
+  x402.optionalPayment(0.01),
+  (req, res) => {
+    const isPaid = req.x402?.verified;
+    
+    res.json({
+      message: isPaid ? 'Premium features' : 'Basic features',
+      features: isPaid ? premiumFeatures : basicFeatures
+    });
+  }
+);
+```
+
+### `healthCheck()`
+
+Returns middleware for health checking the x402 system.
+
+#### Returns
+
+Express middleware that responds with system health status including:
+- Solana network connectivity
+- Facilitator service status
+- Configuration details
+
+#### Example
+
+```typescript
+app.get('/health', x402.healthCheck());
+
+// Response:
+{
+  "status": "healthy",
+  "solana": {
+    "network": "devnet",
+    "connected": true,
+    "slot": 123456789
+  },
+  "facilitator": {
+    "url": "http://localhost:3001",
+    "status": "healthy"
+  }
+}
+```
+
+## Next.js Integration
+
+### `withX402(handler, options)`
+
+Higher-order function for Next.js App Router API routes.
+
+#### Parameters
+
+- `handler` (function): Next.js route handler function
+- `options` (object): x402 configuration options
+  - `amount` (number): Required payment amount
+  - `merchantAddress` (string): Solana address
+  - `facilitatorUrl` (string): Facilitator service URL
+  - `timeout?` (number): Request timeout
+
+#### Returns
+
+Enhanced route handler with payment verification
+
+#### Example
+
+```typescript
+// app/api/premium/route.ts
+import { withX402 } from 'x402-framework-sdk/nextjs';
+
+export const GET = withX402(
+  async (request) => {
+    return Response.json({ message: 'Premium content' });
+  },
+  {
+    amount: 0.01,
+    merchantAddress: process.env.X402_MERCHANT_ADDRESS!,
+    facilitatorUrl: process.env.X402_FACILITATOR_URL!
+  }
+);
+```
+
+### `createX402Handler(handler, options)`
+
+For Next.js Pages Router (legacy).
+
+#### Parameters
+
+- `handler` (function): API route handler
+- `options` (object): x402 configuration options
+
+#### Example
+
+```typescript
+// pages/api/premium.ts
+import { createX402Handler } from 'x402-framework-sdk/nextjs';
+
+const handler = createX402Handler(
+  (req, res) => {
+    res.json({ message: 'Premium content' });
+  },
+  {
+    amount: 0.01,
+    merchantAddress: process.env.X402_MERCHANT_ADDRESS!,
+    facilitatorUrl: process.env.X402_FACILITATOR_URL!
+  }
+);
+
+export default handler;
+```
+
+## Fastify Plugin
+
+### `x402Plugin(fastify, options)`
+
+Fastify plugin for x402 integration.
+
+#### Parameters
+
+- `fastify` (object): Fastify instance
+- `options` (object): Plugin configuration
+  - `facilitatorUrl` (string): Facilitator service URL
+  - `merchantAddress` (string): Solana address
+  - `timeout?` (number): Request timeout
+  - `nonceStorage?` (string): Storage type
+
+#### Usage
+
+```typescript
+import x402Plugin from 'x402-framework-sdk/fastify';
+
+await fastify.register(x402Plugin, {
+  facilitatorUrl: process.env.X402_FACILITATOR_URL,
+  merchantAddress: process.env.X402_MERCHANT_ADDRESS
+});
+
+// Use in routes
+fastify.get('/premium', {
+  x402: { amount: 0.01 }
+}, async (request, reply) => {
+  return { message: 'Premium content' };
+});
+```
+
+## Hono Middleware
+
+### `x402(options)`
+
+Hono middleware for payment verification.
+
+#### Parameters
+
+- `options` (object): Middleware configuration
+  - `amount` (number): Required payment amount
+  - `merchantAddress` (string): Solana address
+  - `facilitatorUrl` (string): Facilitator service URL
+  - `timeout?` (number): Request timeout
+
+#### Example
+
+```typescript
+import { x402 } from 'x402-framework-sdk/hono';
+
+app.get('/premium',
+  x402({
+    amount: 0.01,
+    merchantAddress: process.env.X402_MERCHANT_ADDRESS!,
+    facilitatorUrl: process.env.X402_FACILITATOR_URL!
+  }),
+  (c) => c.json({ message: 'Premium content' })
+);
+```
+
+## Client Library
+
+### `X402Client`
+
+Client for making payment requests.
+
+#### Constructor
+
+```typescript
+new X402Client(options)
+```
+
+#### Parameters
+
+- `options` (object):
+  - `wallet` (X402Wallet): Wallet instance for signing
+  - `facilitatorUrl` (string): Facilitator service URL
+  - `timeout?` (number): Request timeout
+
+#### Methods
+
+##### `payAndFetch(url, options)`
+
+Make a payment request to a protected endpoint.
+
+**Parameters:**
+- `url` (string): Target API endpoint
+- `options` (object):
+  - `amount` (number): Payment amount in SOL
+  - `method?` (string): HTTP method (default: 'GET')
+  - `body?` (object): Request body for POST/PUT
+  - `headers?` (object): Additional headers
+
+**Returns:** Promise resolving to API response
+
+**Example:**
+```typescript
+const response = await client.payAndFetch('/api/premium', {
+  amount: 0.01,
+  method: 'POST',
+  body: { query: 'example' }
+});
+```
+
+### `X402Wallet`
+
+Wallet management for signing payments.
+
+#### Static Methods
+
+##### `X402Wallet.create()`
+
+Create a new random wallet.
+
+**Returns:** X402Wallet instance
+
+##### `X402Wallet.fromPrivateKey(privateKey)`
+
+Import wallet from private key.
+
+**Parameters:**
+- `privateKey` (string): Base58 encoded private key
+
+**Returns:** X402Wallet instance
+
+##### `X402Wallet.fromMnemonic(mnemonic)`
+
+Import wallet from mnemonic phrase.
+
+**Parameters:**
+- `mnemonic` (string): BIP39 mnemonic phrase
+
+**Returns:** X402Wallet instance
+
+#### Instance Methods
+
+##### `getPublicKey()`
+
+Get wallet's public key.
+
+**Returns:** string (Base58 encoded public key)
+
+##### `sign(message)`
+
+Sign a message with the wallet.
+
+**Parameters:**
+- `message` (Uint8Array): Message to sign
+
+**Returns:** Uint8Array (signature)
+
+#### Example
+
+```typescript
+import { X402Client, X402Wallet } from 'x402-client';
+
+// Create new wallet
+const wallet = X402Wallet.create();
+
+// Or import existing wallet
+const wallet = X402Wallet.fromPrivateKey('your-private-key');
+
+// Create client
+const client = new X402Client({
+  wallet,
+  facilitatorUrl: 'http://localhost:3001'
+});
+```
+
+## Types
+
+### `PaymentData`
+
+Payment information structure.
+
+```typescript
+interface PaymentData {
+  amount: number;           // Payment amount in SOL
+  signature: string;        // Base58 encoded signature
+  publicKey: string;        // Base58 encoded public key
+  timestamp: number;        // Unix timestamp
+  nonce: string;           // Unique nonce string
+  transactionSignature?: string; // Optional Solana transaction signature
+}
+```
+
+### `X402Request`
+
+Extended request object with payment information.
+
+```typescript
+interface X402Request extends Request {
+  x402?: {
+    verified: boolean;      // Payment verification status
+    amount: number;         // Payment amount
+    signature: string;      // Payment signature
+    timestamp: number;      // Payment timestamp
+    publicKey: string;      // Payer's public key
+    transactionSignature?: string; // Solana transaction signature
+  };
+}
+```
+
+### `HealthCheckResponse`
+
+Health check response structure.
+
+```typescript
+interface HealthCheckResponse {
+  status: 'healthy' | 'unhealthy';
+  timestamp: string;
+  solana: {
+    network: string;
+    connected: boolean;
+    slot?: number;
+    blockHeight?: number;
+  };
+  facilitator: {
+    url: string;
+    status: 'healthy' | 'unhealthy' | 'unreachable';
+  };
+  merchant: {
+    address: string;
+  };
+}
+```
+
+## Error Codes
+
+### Payment Errors
+
+- `PAYMENT_REQUIRED`: No payment provided (402 status)
+- `INVALID_SIGNATURE`: Payment signature verification failed
+- `INSUFFICIENT_AMOUNT`: Payment amount below required minimum
+- `EXCESSIVE_AMOUNT`: Payment amount above maximum limit
+- `EXPIRED_PAYMENT`: Payment timestamp too old
+- `INVALID_NONCE`: Nonce already used or invalid format
+
+### System Errors
+
+- `FACILITATOR_ERROR`: Facilitator service unavailable
+- `NETWORK_ERROR`: Solana network connection failed
+- `TIMEOUT_ERROR`: Request timeout exceeded
+- `CONFIGURATION_ERROR`: Invalid configuration provided
+
+### Example Error Response
+
+```json
+{
+  "success": false,
+  "error": "PAYMENT_REQUIRED",
+  "message": "Payment of 0.01 SOL required",
+  "code": 402,
+  "details": {
+    "amount": 0.01,
+    "merchantAddress": "75yHmikzz9tP5oduNpzaHJMPa5qevEvc6ELXUtK16Fss",
+    "facilitatorUrl": "http://localhost:3001",
+    "instructions": {
+      "step1": "Create and sign a payment transaction",
+      "step2": "Include transaction signature in x-payment header",
+      "step3": "Retry the request with payment proof"
+    }
+  }
+}
+```
+
+---
+
+**Next**: [Examples →](/docs/examples)

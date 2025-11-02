@@ -1,0 +1,22 @@
+{
+  "index": {
+    "title": "x402 JavaScript/TypeScript SDK Documentation",
+    "type": "page"
+  },
+  "getting-started": {
+    "title": "Getting Started",
+    "type": "page"
+  },
+  "frameworks": {
+    "title": "Framework Guides",
+    "type": "page"
+  },
+  "api-reference": {
+    "title": "API Reference",
+    "type": "page"
+  },
+  "examples": {
+    "title": "Examples",
+    "type": "page"
+  }
+}

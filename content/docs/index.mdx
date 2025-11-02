@@ -1,16 +1,67 @@
 ---
-title: Hello World
-description: Your first document
+title: x402 JavaScript/TypeScript SDK Documentation
+description: The ultimate SDK for payment-gated APIs on Solana
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+Welcome to the official documentation for **x402 JavaScript/TypeScript SDK** - the ultimate toolkit for building payment-gated APIs on Solana.
 
-## What is Next?
+## What is x402 SDK?
 
-<Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card
-    title="Learn more about Next Docs"
-    href="https://next-docs-zeta.vercel.app"
-  />
-</Cards>
+A **simple**, **powerful** and **production-ready** SDK that transforms any API into a paid service in minutes. Built for the Solana ecosystem with developer experience as the top priority.
+
+### ⚡ **Key Features**
+
+- **🚀 2-Minute Setup** - From installation to working payment-gated API
+- **🌐 Multi-Framework** - Express.js, Next.js, Fastify, Hono support
+- **🔒 Secure by Default** - Ed25519 signatures, nonce protection, replay attack prevention
+- **💎 TypeScript First** - Full type safety and IntelliSense support
+- **📦 NPM Ready** - Available on NPM registry for easy installation
+
+### 🎯 **Why Choose x402 SDK?**
+
+| Traditional Setup | x402 SDK |
+|-------------------|----------|
+| 30+ minutes setup | **2 minutes** |
+| 200+ lines of code | **10-20 lines** |
+| Single framework | **4 frameworks** |
+| Manual security | **Built-in security** |
+| Complex integration | **One-liner integration** |
+
+## Quick Start
+
+Get started with x402 SDK in under 2 minutes:
+
+```bash
+npm install x402-framework-sdk x402-client
+```
+
+```typescript
+import { createX402Middleware } from 'x402-framework-sdk/express';
+
+const x402 = createX402Middleware({
+  facilitatorUrl: 'http://localhost:3001',
+  merchantAddress: 'YOUR_SOLANA_ADDRESS'
+});
+
+app.get('/premium', x402.requirePayment(0.01), handler);
+```
+
+That's it! Your API is now payment-gated. 🎉
+
+## What's Next?
+
+- **[Getting Started](/docs/getting-started)** - Learn the basics and set up your first payment-gated API
+- **[Framework Guides](/docs/frameworks)** - Step-by-step guides for Express, Next.js, Fastify, and Hono
+- **[API Reference](/docs/api-reference)** - Detailed documentation for all SDK methods and options
+- **[Examples](/docs/examples)** - Real-world examples and use cases for inspiration
+
+## Community & Support
+
+- **GitHub**: [envxx/x402-js-sdk](https://github.com/envxx/x402-js-sdk)
+- **Discord**: [Join our community](https://discord.gg/x402)
+- **NPM**: [x402-framework-sdk](https://www.npmjs.com/package/x402-framework-sdk)
+- **Issues**: [Report bugs](https://github.com/envxx/x402-js-sdk/issues)
+
+---
+
+**Ready to transform your APIs?** [Get started now →](/docs/getting-started)

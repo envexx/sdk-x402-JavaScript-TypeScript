@@ -1,0 +1,449 @@
+---
+title: Framework Guides
+description: Step-by-step integration guides for Express.js, Next.js, Fastify, and Hono
+---
+
+x402 SDK supports multiple popular web frameworks. Choose your framework below for detailed integration guides.
+
+## Supported Frameworks
+
+### Express.js ⚡
+**Difficulty**: Beginner | **Setup Time**: 2 minutes
+
+The most popular Node.js web framework. Simple middleware integration.
+
+### Next.js ▲
+**Difficulty**: Beginner | **Setup Time**: 3 minutes
+
+React framework with App Router and Pages Router support.
+
+### Fastify ⚡
+**Difficulty**: Intermediate | **Setup Time**: 3 minutes
+
+Fast and low overhead web framework with plugin architecture.
+
+### Hono 🔥
+**Difficulty**: Intermediate | **Setup Time**: 2 minutes
+
+Ultrafast web framework for edge computing and serverless.
+
+---
+
+## Express.js
+
+### Installation
+
+```bash
+npm install express x402-framework-sdk x402-client
+```
+
+### Basic Setup
+
+```typescript
+import express from 'express';
+import { createX402Middleware } from 'x402-framework-sdk/express';
+
+const app = express();
+app.use(express.json());
+
+// Create x402 middleware
+const x402 = createX402Middleware({
+  facilitatorUrl: process.env.X402_FACILITATOR_URL,
+  merchantAddress: process.env.X402_MERCHANT_ADDRESS
+});
+
+// Public routes
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to x402 API' });
+});
+
+// Premium routes
+app.get('/premium', 
+  x402.requirePayment(0.01),
+  (req, res) => {
+    res.json({
+      message: 'Premium content unlocked!',
+      data: {
+        exclusiveContent: 'This is premium data',
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+);
+
+// Multiple payment tiers
+app.get('/basic', x402.requirePayment(0.005), basicHandler);
+app.get('/pro', x402.requirePayment(0.02), proHandler);
+app.get('/enterprise', x402.requirePayment(0.05), enterpriseHandler);
+
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
+```
+
+### Advanced Configuration
+
+```typescript
+const x402 = createX402Middleware({
+  facilitatorUrl: process.env.X402_FACILITATOR_URL,
+  merchantAddress: process.env.X402_MERCHANT_ADDRESS,
+  timeout: 30000,
+  nonceStorage: 'redis', // or 'memory', 'file'
+  nonceExpiry: 300000, // 5 minutes
+  debug: process.env.NODE_ENV === 'development'
+});
+```
+
+### Optional Payments
+
+```typescript
+// Works with or without payment
+app.get('/flexible',
+  x402.optionalPayment(0.01),
+  (req, res) => {
+    const isPaid = req.x402?.verified;
+    
+    res.json({
+      message: isPaid ? 'Premium features' : 'Basic features',
+      features: isPaid ? premiumFeatures : basicFeatures
+    });
+  }
+);
+```
+
+### Health Check
+
+```typescript
+app.get('/health', x402.healthCheck());
+```
+
+---
+
+## Next.js
+
+### Installation
+
+```bash
+npm install next x402-framework-sdk x402-client
+```
+
+### App Router (Recommended)
+
+```typescript
+// app/api/premium/route.ts
+import { withX402 } from 'x402-framework-sdk/nextjs';
+
+export const GET = withX402(
+  async (request) => {
+    return Response.json({
+      message: 'Premium content unlocked!',
+      data: {
+        exclusiveContent: 'This is premium data',
+        timestamp: new Date().toISOString()
+      }
+    });
+  },
+  {
+    amount: 0.01,
+    merchantAddress: process.env.X402_MERCHANT_ADDRESS!,
+    facilitatorUrl: process.env.X402_FACILITATOR_URL!
+  }
+);
+
+export const POST = withX402(
+  async (request) => {
+    const body = await request.json();
+    
+    return Response.json({
+      message: 'Premium POST endpoint',
+      receivedData: body,
+      timestamp: new Date().toISOString()
+    });
+  },
+  {
+    amount: 0.02,
+    merchantAddress: process.env.X402_MERCHANT_ADDRESS!,
+    facilitatorUrl: process.env.X402_FACILITATOR_URL!
+  }
+);
+```
+
+### Pages Router (Legacy)
+
+```typescript
+// pages/api/premium.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { createX402Handler } from 'x402-framework-sdk/nextjs';
+
+const handler = createX402Handler(
+  (req: NextApiRequest, res: NextApiResponse) => {
+    res.status(200).json({
+      message: 'Premium content unlocked!',
+      data: 'Exclusive content here...'
+    });
+  },
+  {
+    amount: 0.01,
+    merchantAddress: process.env.X402_MERCHANT_ADDRESS!,
+    facilitatorUrl: process.env.X402_FACILITATOR_URL!
+  }
+);
+
+export default handler;
+```
+
+### Environment Configuration
+
+```env
+# .env.local
+X402_FACILITATOR_URL=http://localhost:3001
+X402_MERCHANT_ADDRESS=YOUR_SOLANA_ADDRESS
+```
+
+---
+
+## Fastify
+
+### Installation
+
+```bash
+npm install fastify x402-framework-sdk x402-client
+```
+
+### Plugin Setup
+
+```typescript
+import Fastify from 'fastify';
+import x402Plugin from 'x402-framework-sdk/fastify';
+
+const fastify = Fastify({
+  logger: true
+});
+
+// Register x402 plugin
+await fastify.register(x402Plugin, {
+  facilitatorUrl: process.env.X402_FACILITATOR_URL,
+  merchantAddress: process.env.X402_MERCHANT_ADDRESS
+});
+
+// Routes with payment requirements
+fastify.get('/premium', {
+  x402: { amount: 0.01 }
+}, async (request, reply) => {
+  return {
+    message: 'Premium content unlocked!',
+    data: {
+      exclusiveContent: 'This is premium data',
+      timestamp: new Date().toISOString()
+    }
+  };
+});
+
+// Multiple tiers
+fastify.get('/basic', { x402: { amount: 0.005 } }, basicHandler);
+fastify.get('/pro', { x402: { amount: 0.02 } }, proHandler);
+fastify.get('/enterprise', { x402: { amount: 0.05 } }, enterpriseHandler);
+
+// Start server
+const start = async () => {
+  try {
+    await fastify.listen({ port: 3000 });
+    console.log('Server running on port 3000');
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+};
+
+start();
+```
+
+### Advanced Options
+
+```typescript
+await fastify.register(x402Plugin, {
+  facilitatorUrl: process.env.X402_FACILITATOR_URL,
+  merchantAddress: process.env.X402_MERCHANT_ADDRESS,
+  timeout: 30000,
+  nonceStorage: 'redis',
+  debug: true
+});
+```
+
+### Route-specific Configuration
+
+```typescript
+fastify.get('/custom', {
+  x402: { 
+    amount: 0.01,
+    timeout: 15000,
+    maxAmount: 0.1
+  }
+}, customHandler);
+```
+
+---
+
+## Hono
+
+### Installation
+
+```bash
+npm install hono x402-framework-sdk x402-client
+```
+
+### Basic Setup
+
+```typescript
+import { Hono } from 'hono';
+import { x402 } from 'x402-framework-sdk/hono';
+
+const app = new Hono();
+
+// Public endpoint
+app.get('/public', (c) => 
+  c.json({ message: 'This is free!' })
+);
+
+// Premium endpoint
+app.get('/premium',
+  x402({ 
+    amount: 0.01,
+    merchantAddress: process.env.X402_MERCHANT_ADDRESS!,
+    facilitatorUrl: process.env.X402_FACILITATOR_URL!
+  }),
+  (c) => c.json({
+    message: 'Premium content unlocked!',
+    data: {
+      exclusiveContent: 'This is premium data',
+      timestamp: new Date().toISOString()
+    }
+  })
+);
+
+// Multiple payment tiers
+app.get('/basic', x402({ amount: 0.005 }), basicHandler);
+app.get('/pro', x402({ amount: 0.02 }), proHandler);
+
+export default app;
+```
+
+### Edge Runtime (Vercel/Cloudflare)
+
+```typescript
+import { Hono } from 'hono';
+import { x402 } from 'x402-framework-sdk/hono';
+
+const app = new Hono();
+
+app.get('/api/premium',
+  x402({
+    amount: 0.01,
+    merchantAddress: process.env.X402_MERCHANT_ADDRESS!,
+    facilitatorUrl: process.env.X402_FACILITATOR_URL!,
+    timeout: 10000 // Shorter timeout for edge
+  }),
+  async (c) => {
+    return c.json({
+      message: 'Edge premium content!',
+      region: c.env?.CF_RAY || 'unknown',
+      timestamp: new Date().toISOString()
+    });
+  }
+);
+
+export default app;
+```
+
+### Middleware Composition
+
+```typescript
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
+
+const app = new Hono();
+
+// Global middleware
+app.use('*', cors());
+app.use('*', logger());
+
+// Payment-gated with additional middleware
+app.get('/premium',
+  x402({ amount: 0.01 }),
+  async (c, next) => {
+    // Custom middleware after payment verification
+    console.log('Payment verified, processing request...');
+    await next();
+  },
+  (c) => c.json({ message: 'Premium content!' })
+);
+```
+
+---
+
+## Common Patterns
+
+### Error Handling
+
+```typescript
+// Express.js
+app.use((err, req, res, next) => {
+  if (err.code === 'PAYMENT_REQUIRED') {
+    return res.status(402).json({
+      error: 'Payment required',
+      amount: err.amount,
+      instructions: err.instructions
+    });
+  }
+  next(err);
+});
+
+// Next.js
+export const GET = withX402(
+  async (request) => {
+    try {
+      // Your logic here
+      return Response.json({ success: true });
+    } catch (error) {
+      return Response.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
+  },
+  { amount: 0.01 }
+);
+```
+
+### Rate Limiting
+
+```typescript
+import rateLimit from 'express-rate-limit';
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
+app.use('/api/premium', limiter);
+app.get('/api/premium', x402.requirePayment(0.01), handler);
+```
+
+### Logging
+
+```typescript
+app.use((req, res, next) => {
+  if (req.headers['x-payment']) {
+    console.log('Payment request:', {
+      endpoint: req.path,
+      ip: req.ip,
+      timestamp: new Date().toISOString()
+    });
+  }
+  next();
+});
+```
+
+---
+
+**Next**: [API Reference →](/docs/api-reference)

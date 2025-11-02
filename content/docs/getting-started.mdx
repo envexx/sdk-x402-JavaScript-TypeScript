@@ -1,0 +1,268 @@
+---
+title: Getting Started
+description: Transform any API into a paid service in just 2 minutes with x402 SDK
+---
+
+Transform any API into a paid service in just 2 minutes with x402 SDK.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- **Node.js** 16+ installed
+- **NPM** or **pnpm** package manager
+- A **Solana wallet address** for receiving payments
+- Basic knowledge of **JavaScript/TypeScript**
+
+## Installation
+
+Install the x402 SDK packages:
+
+```bash
+npm install x402-framework-sdk x402-client
+```
+
+Or with pnpm:
+
+```bash
+pnpm add x402-framework-sdk x402-client
+```
+
+## Quick Setup
+
+### 1. Choose Your Framework
+
+x402 SDK supports multiple frameworks. Choose the one you're using:
+
+#### Express.js
+
+```typescript
+import express from 'express';
+import { createX402Middleware } from 'x402-framework-sdk/express';
+
+const app = express();
+
+const x402 = createX402Middleware({
+  facilitatorUrl: 'http://localhost:3001',
+  merchantAddress: 'YOUR_SOLANA_ADDRESS'
+});
+
+// Public endpoint (free)
+app.get('/public', (req, res) => {
+  res.json({ message: 'This is free!' });
+});
+
+// Premium endpoint (0.01 SOL)
+app.get('/premium', 
+  x402.requirePayment(0.01), 
+  (req, res) => {
+    res.json({ 
+      message: 'Premium content unlocked!',
+      data: 'Exclusive content here...'
+    });
+  }
+);
+
+app.listen(3000);
+```
+
+#### Next.js
+
+```typescript
+// app/api/premium/route.ts
+import { withX402 } from 'x402-framework-sdk/nextjs';
+
+export const GET = withX402(
+  async (req) => {
+    return Response.json({
+      message: 'Premium content unlocked!',
+      data: 'Exclusive content here...'
+    });
+  },
+  { 
+    amount: 0.01,
+    merchantAddress: 'YOUR_SOLANA_ADDRESS',
+    facilitatorUrl: 'http://localhost:3001'
+  }
+);
+```
+
+#### Fastify
+
+```typescript
+import Fastify from 'fastify';
+import x402Plugin from 'x402-framework-sdk/fastify';
+
+const fastify = Fastify();
+
+await fastify.register(x402Plugin, {
+  facilitatorUrl: 'http://localhost:3001',
+  merchantAddress: 'YOUR_SOLANA_ADDRESS'
+});
+
+// Premium endpoint
+fastify.get('/premium', {
+  x402: { amount: 0.01 }
+}, async () => {
+  return { 
+    message: 'Premium content unlocked!',
+    data: 'Exclusive content here...'
+  };
+});
+
+await fastify.listen({ port: 3000 });
+```
+
+#### Hono
+
+```typescript
+import { Hono } from 'hono';
+import { x402 } from 'x402-framework-sdk/hono';
+
+const app = new Hono();
+
+// Premium endpoint
+app.get('/premium',
+  x402({ 
+    amount: 0.01,
+    merchantAddress: 'YOUR_SOLANA_ADDRESS',
+    facilitatorUrl: 'http://localhost:3001'
+  }),
+  (c) => c.json({
+    message: 'Premium content unlocked!',
+    data: 'Exclusive content here...'
+  })
+);
+
+export default app;
+```
+
+### 2. Set Up Environment Variables
+
+Create a `.env` file in your project root:
+
+```env
+# x402 Configuration
+X402_FACILITATOR_URL=http://localhost:3001
+X402_MERCHANT_ADDRESS=YOUR_SOLANA_ADDRESS_HERE
+
+# Optional
+X402_TIMEOUT=10000
+X402_MAX_PAYMENT_AMOUNT=1000000000
+```
+
+### 3. Get Your Solana Address
+
+If you don't have a Solana address yet:
+
+```bash
+# Install Solana CLI
+npm install -g @solana/cli
+
+# Generate new wallet
+solana-keygen new --outfile ~/.config/solana/id.json
+
+# Get your address
+solana address
+```
+
+Copy this address to your `.env` file as `X402_MERCHANT_ADDRESS`.
+
+## Client Usage
+
+Create a client to make payments:
+
+```typescript
+import { X402Client, X402Wallet } from 'x402-client';
+
+// Create or load wallet
+const wallet = X402Wallet.create(); // or fromPrivateKey()
+
+// Create client
+const client = new X402Client({
+  wallet,
+  facilitatorUrl: 'http://localhost:3001'
+});
+
+// Make payment request
+const response = await client.payAndFetch('http://localhost:3000/premium', {
+  amount: 0.01 // 0.01 SOL
+});
+
+console.log(response.data); // Premium content
+```
+
+## Testing Your Setup
+
+### 1. Start Your Server
+
+```bash
+node server.js
+# or
+npm start
+```
+
+### 2. Test Public Endpoint
+
+```bash
+curl http://localhost:3000/public
+```
+
+Expected response:
+```json
+{
+  "message": "This is free!"
+}
+```
+
+### 3. Test Premium Endpoint (Without Payment)
+
+```bash
+curl http://localhost:3000/premium
+```
+
+Expected response:
+```json
+{
+  "success": false,
+  "error": "Payment required",
+  "code": "PAYMENT_REQUIRED"
+}
+```
+
+### 4. Test Premium Endpoint (With Payment)
+
+Use the client code above or our test utility:
+
+```bash
+npx x402-client pay http://localhost:3000/premium 0.01
+```
+
+## What's Next?
+
+🎉 **Congratulations!** You've successfully set up payment-gated APIs with x402 SDK.
+
+### Next Steps:
+
+1. **[Framework Guides](/docs/frameworks)** - Deep dive into your specific framework
+2. **[API Reference](/docs/api-reference)** - Explore all available options
+3. **[Examples](/docs/examples)** - See real-world use cases
+4. **[Security](/docs/security)** - Learn about security best practices
+
+### Common Use Cases:
+
+- **API Rate Limiting** - Free tier vs paid tier
+- **Premium Content** - Exclusive articles, videos, data
+- **AI Services** - Pay-per-generation APIs
+- **File Downloads** - Pay-per-download digital assets
+
+### Need Help?
+
+- 📖 **Documentation**: You're reading it!
+- 💬 **Discord**: [Join our community](https://discord.gg/x402)
+- 🐛 **Issues**: [Report bugs](https://github.com/envxx/x402-js-sdk/issues)
+- 📧 **Email**: support@x402.dev
+
+---
+
+**Ready for advanced features?** [Explore framework guides →](/docs/frameworks)
