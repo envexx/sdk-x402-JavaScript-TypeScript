@@ -82,11 +82,10 @@ content/docs/
 - Health monitoring and error handling
 - Built-in testing utilities
 
-## 🔗 Related Repositories
+## 🔗 Community & Support
 
-- **Main SDK**: [x402-js-sdk](https://github.com/envxx/x402-js-sdk) - The actual SDK packages
-- **Examples**: Real-world implementation examples
-- **Templates**: Starter templates for different frameworks
+- **GitHub**: [envexx](https://github.com/envexx) - Main organization
+- **Telegram Community**: [Join our community](https://t.me/sdkx402solana) - Get help and updates
 
 ## 🤝 Contributing
 
